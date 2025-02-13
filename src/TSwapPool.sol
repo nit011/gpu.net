@@ -1,16 +1,3 @@
-/**
- * /-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\
- * |                                     |
- * \ _____    ____                       /
- * -|_   _|  / ___|_      ____ _ _ __    -
- * /  | |____\___ \ \ /\ / / _` | '_ \   \
- * |  | |_____|__) \ V  V / (_| | |_) |  |
- * \  |_|    |____/ \_/\_/ \__,_| .__/   /
- * -                            |_|      -
- * /                                     \
- * |                                     |
- * \-/|\-/|\-/|\-/|\-/|\-/|\-/|\-/|\-/|\-/
- */
 // SPDX-License-Identifier: GNU General Public License v3.0
 pragma solidity ^0.8.16;
 
@@ -59,7 +46,7 @@ contract TSwapPool is ERC20 {
         uint256 wethWithdrawn,
         uint256 poolTokensWithdrawn
     );
-    //@audit -info 3  event should be index if  there are more than  three  prams
+    
     event Swap(
         address indexed swapper,
         IERC20 tokenIn,
@@ -116,11 +103,6 @@ contract TSwapPool is ERC20 {
         uint256 wethToDeposit,
         uint256 minimumLiquidityTokensToMint,
         uint256 maximumPoolTokensToDeposit,
-        //@audit - high!  info deadline not being used
-        //@audit if someone sets a deadline ,let's say next block 
-        //they could still deposit
-        //IMPACT -HIGH a user who expects to fail , will go through server disruption of the functionality
-        //LIKELIHOOD: HIGH always the case
         uint64 deadline
     )
         external
@@ -128,7 +110,6 @@ contract TSwapPool is ERC20 {
         returns (uint256 liquidityTokensToMint)
     {
         if (wethToDeposit < MINIMUM_WETH_LIQUIDITY) {
-            //@audit -info  MINIMUM_WETH_LIQUIDITY, is a constant and therfore not require to be emitted
             revert TSwapPool__WethDepositAmountTooLow(
                 MINIMUM_WETH_LIQUIDITY,
                 wethToDeposit
@@ -136,23 +117,7 @@ contract TSwapPool is ERC20 {
         }
         if (totalLiquidityTokenSupply() > 0) {
             uint256 wethReserves = i_wethToken.balanceOf(address(this));
-            //@audit -gas don't need this line
             uint256 poolTokenReserves = i_poolToken.balanceOf(address(this));
-            // Our invariant says weth, poolTokens, and liquidity tokens must always have the same ratio after the
-            // initial deposit
-            // poolTokens / constant(k) = weth
-            // weth / constant(k) = liquidityTokens
-            // aka...
-            // weth / poolTokens = constant(k)
-            // To make sure this holds, we can make sure the new balance will match the old balance
-            // (wethReserves + wethToDeposit) / (poolTokenReserves + poolTokensToDeposit) = constant(k)
-            // (wethReserves + wethToDeposit) / (poolTokenReserves + poolTokensToDeposit) =
-            // (wethReserves / poolTokenReserves)
-            //
-            // So we can do some elementary math now to figure out poolTokensToDeposit...
-            // (wethReserves + wethToDeposit) / poolTokensToDeposit = wethReserves
-            // (wethReserves + wethToDeposit)  = wethReserves * poolTokensToDeposit
-            // (wethReserves + wethToDeposit) / wethReserves  =  poolTokensToDeposit
             uint256 poolTokensToDeposit = getPoolTokensToDepositBasedOnWeth(
                 wethToDeposit
             );
@@ -162,8 +127,6 @@ contract TSwapPool is ERC20 {
                     poolTokensToDeposit
                 );
             }
-
-            // We do the same thing for liquidity tokens. Similar math.
             liquidityTokensToMint =
                 (wethToDeposit * totalLiquidityTokenSupply()) /
                 wethReserves;
@@ -179,17 +142,11 @@ contract TSwapPool is ERC20 {
                 liquidityTokensToMint
             );
         } else {
-            // This will be the "initial" funding of the protocol. We are starting from blank here!
-            // We just have them send the tokens in, and we mint liquidity tokens based on the weth
             _addLiquidityMintAndTransfer(
                 wethToDeposit,
                 maximumPoolTokensToDeposit,
                 wethToDeposit
             );
-            //@audit external call
-            //@audit updating a variable
-            //@audit -info it would be better if this was before the _addLiquidtyMintAndTransfer' call 
-            //@audit to follow CEI
             liquidityTokensToMint = wethToDeposit;
         }
     }
@@ -203,16 +160,7 @@ contract TSwapPool is ERC20 {
         uint256 poolTokensToDeposit,
         uint256 liquidityTokensToMint
     ) private {
-
-        //@audit follow cei good
-        _mint(msg.sender, liquidityTokensToMint);
-        //@audit -low this is backwards should be 
-        //IMPACT: low  protocol is giving the wrong return/information
-        //LIKELIHOOD: high
-        // (msg.sender,wethToDeposite,poolTokensDeposite)
         emit LiquidityAdded(msg.sender, poolTokensToDeposit, wethToDeposit);
-
-        // Interactions
         i_wethToken.safeTransferFrom(msg.sender, address(this), wethToDeposit);
         i_poolToken.safeTransferFrom(
             msg.sender,
@@ -238,10 +186,6 @@ contract TSwapPool is ERC20 {
         revertIfZero(minWethToWithdraw)
         revertIfZero(minPoolTokensToWithdraw)
     {
-        // We do the same math as above
-        //@audit 100LP tokens  -> = 10%
-        //10% weth 
-        //10% of the pool token 
         uint256 wethToWithdraw = (liquidityTokensToBurn *
             i_wethToken.balanceOf(address(this))) / totalLiquidityTokenSupply();
         uint256 poolTokensToWithdraw = (liquidityTokensToBurn *
@@ -256,7 +200,6 @@ contract TSwapPool is ERC20 {
                 minPoolTokensToWithdraw
             );
         }
-//@audit this burn is external -- no....
         _burn(msg.sender, liquidityTokensToBurn);
         emit LiquidityRemoved(msg.sender, wethToWithdraw, poolTokensToWithdraw);
 
@@ -279,30 +222,12 @@ contract TSwapPool is ERC20 {
         revertIfZero(outputReserves)
         returns (uint256 outputAmount)
     {
-        // x * y = k
-        // numberOfWeth * numberOfPoolTokens = constant k
-        // k must not change during a transaction (invariant)
-        // with this math, we want to figure out how many PoolTokens to deposit
-        // since weth * poolTokens = k, we can rearrange to get:
-        // (currentWeth + wethToDeposit) * (currentPoolTokens + poolTokensToDeposit) = k
-        // **************************
-        // ****** MATH TIME!!! ******
-        // **************************
-        // FOIL it (or ChatGPT): https://en.wikipedia.org/wiki/FOIL_method
-        // (totalWethOfPool * totalPoolTokensOfPool) + (totalWethOfPool * poolTokensToDeposit) + (wethToDeposit *
-        // totalPoolTokensOfPool) + (wethToDeposit * poolTokensToDeposit) = k
-        // (totalWethOfPool * totalPoolTokensOfPool) + (wethToDeposit * totalPoolTokensOfPool) = k - (totalWethOfPool *
-        // poolTokensToDeposit) - (wethToDeposit * poolTokensToDeposit)
-        //@audit -info magic number 
-        //0.03% fee coming 
         uint256 inputAmountMinusFee = inputAmount * 997;
         uint256 numerator = inputAmountMinusFee * outputReserves;
         uint256 denominator = (inputReserves * 1000) + inputAmountMinusFee;
         return numerator / denominator;
     }
 
-
-//1 weth -> DAI?
     function getInputAmountBasedOnOutput(
         uint256 outputAmount,
         uint256 inputReserves,
@@ -313,33 +238,22 @@ contract TSwapPool is ERC20 {
         revertIfZero(outputAmount)
         revertIfZero(outputReserves)
         returns (uint256 inputAmount)
-        //@audit info  magic number 
     {
-        // @audit 997 / 10000
-        // which is 91.3% fee ??????????
-        //@audit - HIGH
-        //IMPACT - HIGH  -> users are charged way to much 
-        //LIELIHOOD - HIGH -> swapExactuotput is one of the main swapping  functions 
         return
             ((inputReserves * outputAmount) * 10000) /
             ((outputReserves - outputAmount) * 997);
     }
-//@audit - info where the natspec ????
+
     function swapExactInput(
-        IERC20 inputToken, // e input token to swap / sell ie :DAI
-        uint256 inputAmount,// e amount of input token to sell ie :DAI
-        IERC20 outputToken,// e output token to buy / buy ie: weth 
-        // e 7 DAI -> 1 weth 
-        uint256 minOutputAmount,// e minimum output amount expected to receive 
-        uint64 deadline// e deadline for  when the transaction should expire  
+        IERC20 inputToken, 
+        uint256 inputAmount,
+        IERC20 outputToken,
+        uint256 minOutputAmount,
+        uint64 deadline
     )
-    //@audit -info this should be externl 
         public
         revertIfZero(inputAmount)
         revertIfDeadlinePassed(deadline)
-        //@audit low
-        //Impact-low protocol is given the wrong  return 
-        //Lielihood:high always the case
         returns (uint256 output)
     {
         uint256 inputReserves = inputToken.balanceOf(address(this));
@@ -388,14 +302,6 @@ contract TSwapPool is ERC20 {
             inputReserves,
             outputReserves
         ); 
-
-        //@audit AH!!!!!!!!
-        //@audit no slippage protection!!!!!!!
-        // i want  10 output and my input is DAI 
-        // send the transaction , but pool get a MASSIVE transaction that change the  price 
-        // 10 output WETH  -> 100000000000 INPUT DAI
-        //@audit  need a max  input amount
-        //@audit MEV attack  
         _swap(inputToken, inputAmount, outputToken, outputAmount);
     }
 
@@ -407,9 +313,6 @@ contract TSwapPool is ERC20 {
     function sellPoolTokens(
         uint256 poolTokenAmount
     ) external returns (uint256 wethAmount) {
-        // pool toen  -> input 
-        //@audit this  is wrong 
-        //@audit swapexactinput(minwethToReceive) 
         return
             swapExactOutput(
                 i_poolToken,
@@ -429,8 +332,6 @@ contract TSwapPool is ERC20 {
      * @param outputAmount Amount of tokens to send to caller
 
      */
-
-    // we emit the swap  which  is great  and then finally we do the external call  down here   so see this is follow CEI okay yes we are doing our  check here ,then we are doing our effect inside the contract  and then  we are doing  our effect inside the contract  and then we are  doing our external  interactions at the bottom.
     function _swap(
         IERC20 inputToken,
         uint256 inputAmount,
@@ -444,9 +345,7 @@ contract TSwapPool is ERC20 {
         ) {
             revert TSwapPool__InvalidToken();
         }
-//@audit breaks protocol invariant!!!!!!!!!!!!
         swap_count++;
-        //@audit fee on transfer
         if (swap_count >= SWAP_COUNT_MAX) {
             swap_count = 0;
             outputToken.safeTransfer(msg.sender, 1_000_000_000_000_000_000);

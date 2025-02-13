@@ -1,16 +1,4 @@
-/**
- * /-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\
- * |                                     |
- * \ _____    ____                       /
- * -|_   _|  / ___|_      ____ _ _ __    -
- * /  | |____\___ \ \ /\ / / _` | '_ \   \
- * |  | |_____|__) \ V  V / (_| | |_) |  |
- * \  |_|    |____/ \_/\_/ \__,_| .__/   /
- * -                            |_|      -
- * /                                     \
- * |                                     |
- * \-/|\-/|\-/|\-/|\-/|\-/|\-/|\-/|\-/|\-/
- */
+
 // SPDX-License-Identifier: GNU General Public License v3.0
 pragma solidity 0.8.20;
 
@@ -19,7 +7,6 @@ import { IERC20 } from "forge-std/interfaces/IERC20.sol";
 
 contract PoolFactory {
     error PoolFactory__PoolAlreadyExists(address tokenAddress);
-    //@audit-info ths error is not used any where
     error PoolFactory__PoolDoesNotExist(address tokenAddress);
 
     /*//////////////////////////////////////////////////////////////
@@ -39,7 +26,6 @@ contract PoolFactory {
                                FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     constructor(address wethToken) {
-        //@audit -info -lacking zero address check
         i_wethToken = wethToken;
     }
 
@@ -50,9 +36,7 @@ contract PoolFactory {
         if (s_pools[tokenAddress] != address(0)) {
             revert PoolFactory__PoolAlreadyExists(tokenAddress);
         }
-        //@audit q weird ERC20 what if the name function reverts?
         string memory liquidityTokenName = string.concat("T-Swap ", IERC20(tokenAddress).name());
-        //@audit-info this should be  .symbol  not .name()
         string memory liquidityTokenSymbol = string.concat("ts", IERC20(tokenAddress).name());
         TSwapPool tPool = new TSwapPool(tokenAddress, i_wethToken, liquidityTokenName, liquidityTokenSymbol);
         s_pools[tokenAddress] = address(tPool);
