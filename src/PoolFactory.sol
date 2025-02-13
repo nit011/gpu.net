@@ -1,8 +1,7 @@
-
 // SPDX-License-Identifier: GNU General Public License v3.0
-pragma solidity 0.8.20;
+pragma solidity ^0.8.16;
 
-import { TSwapPool } from "./TSwapPool.sol";
+import { SwapPool } from "./SwapPool.sol";
 import { IERC20 } from "forge-std/interfaces/IERC20.sol";
 
 contract PoolFactory {
@@ -38,7 +37,7 @@ contract PoolFactory {
         }
         string memory liquidityTokenName = string.concat("T-Swap ", IERC20(tokenAddress).name());
         string memory liquidityTokenSymbol = string.concat("ts", IERC20(tokenAddress).name());
-        TSwapPool tPool = new TSwapPool(tokenAddress, i_wethToken, liquidityTokenName, liquidityTokenSymbol);
+        SwapPool tPool = new SwapPool(tokenAddress, i_wethToken, liquidityTokenName, liquidityTokenSymbol);
         s_pools[tokenAddress] = address(tPool);
         s_tokens[address(tPool)] = tokenAddress;
         emit PoolCreated(tokenAddress, address(tPool));
