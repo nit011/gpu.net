@@ -49,9 +49,6 @@ contract TSwapPoolTest is Test {
 
         vm.startPrank(user);
         poolToken.approve(address(pool), 10e18);
-        // After we swap, there will be ~110 tokenA, and ~91 WETH
-        // 100 * 100 = 10,000
-        // 110 * ~91 = 10,000
         uint256 expected = 9e18;
 
         pool.swapExactInput(poolToken, 10e18, weth, expected, uint64(block.timestamp));
