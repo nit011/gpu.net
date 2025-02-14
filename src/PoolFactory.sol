@@ -35,7 +35,7 @@ contract PoolFactory {
         if (s_pools[tokenAddress] != address(0)) {
             revert PoolFactory__PoolAlreadyExists(tokenAddress);
         }
-        string memory liquidityTokenName = string.concat("T-Swap ", IERC20(tokenAddress).name());
+        string memory liquidityTokenName = string.concat("Swap ", IERC20(tokenAddress).name());
         string memory liquidityTokenSymbol = string.concat("ts", IERC20(tokenAddress).name());
         SwapPool tPool = new SwapPool(tokenAddress, i_wethToken, liquidityTokenName, liquidityTokenSymbol);
         s_pools[tokenAddress] = address(tPool);

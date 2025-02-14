@@ -1,0 +1,54 @@
+Compiling 39 files with Solc 0.8.20
+Solc 0.8.20 finished in 3.17s
+Compiler run successful with warnings:
+Warning (3420): Source file does not specify required compiler version! Consider adding "pragma solidity ^0.8.20;"
+--> test/unit/invariant/Invariant.t.sol
+
+Warning (5667): Unused function parameter. Remove or comment out the variable name to silence this warning.
+  --> src/SwapPool.sol:84:9:
+   |
+84 |         uint64 deadline
+   |         ^^^^^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+  --> src/SwapPool.sol:95:13:
+   |
+95 |             uint256 poolTokenReserves = i_poolToken.balanceOf(address(this));
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Warning (5667): Unused function parameter. Remove or comment out the variable name to silence this warning.
+   --> src/SwapPool.sol:118:9:
+    |
+118 |         uint256 liquidityTokensToMint
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Warning (5667): Unused function parameter. Remove or comment out the variable name to silence this warning.
+   --> src/SwapPool.sol:207:18:
+    |
+207 |         returns (uint256 output)
+    |                  ^^^^^^^^^^^^^^
+
+Analysing contracts...
+Running tests...
+
+Ran 2 tests for test/unit/PoolFactoryTest.t.sol:PoolFactoryTest
+[PASS] testCantCreatePoolIfExists() (gas: 2432990)
+[PASS] testCreatePool() (gas: 2434984)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 2.22ms (1.91ms CPU time)
+
+Ran 4 tests for test/unit/SwapPool.t.sol:TSwapPoolTest
+[FAIL. Reason: panic: division or modulo by zero (0x12)] testCollectFees() (gas: 260254)
+[FAIL. Reason: assertion failed: 0 != 100000000000000000000] testDeposit() (gas: 148737)
+[PASS] testDepositSwap() (gas: 179628)
+[FAIL. Reason: panic: division or modulo by zero (0x12)] testWithdraw() (gas: 175533)
+Suite result: FAILED. 1 passed; 3 failed; 0 skipped; finished in 3.86ms (4.75ms CPU time)
+
+Ran 2 test suites in 108.46ms (6.08ms CPU time): 3 tests passed, 3 failed, 0 skipped (6 total tests)
+
+Failing tests:
+Encountered 3 failing tests in test/unit/SwapPool.t.sol:TSwapPoolTest
+[FAIL. Reason: panic: division or modulo by zero (0x12)] testCollectFees() (gas: 260254)
+[FAIL. Reason: assertion failed: 0 != 100000000000000000000] testDeposit() (gas: 148737)
+[FAIL. Reason: panic: division or modulo by zero (0x12)] testWithdraw() (gas: 175533)
+
+Encountered a total of 3 failing tests, 3 tests succeeded
